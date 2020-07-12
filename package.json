@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@mapbox/mapbox-gl-geocoder": "^4.5.1",
     "cors": "^2.8.5",
     "cra-template": "1.0.3",
     "express": "^4.17.1",

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import mapboxgl from 'mapbox-gl';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import { getLatLngObj } from "tle.js";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
@@ -36,35 +37,35 @@ class App extends Component {
     // http://www.celestrak.com/NORAD/elements/stations.txt');
     try {
       const response = await fetch('/satellites');
-    const data = await response.text();
-    const lines = data.split('\n');
-    const satellites = {};
-    for (let i = 0; i < lines.length; i += 3) {
-      if (i + 1 < lines.length) {
-        try {
-          const latLonObj = getLatLngObj([lines[i + 1], lines[i + 2]]);
-          satellites[lines[i]] = latLonObj;
-        } catch (e) {
-          console.error(e);
+      const data = await response.text();
+      const lines = data.split('\n');
+      const satellites = {};
+      for (let i = 0; i < lines.length; i += 3) {
+        if (i + 1 < lines.length) {
+          try {
+            const latLonObj = getLatLngObj([lines[i + 1], lines[i + 2]]);
+            satellites[lines[i]] = latLonObj;
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
-    }
 
-    Object.keys(satellites).forEach(key => {
-      markers.push({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [satellites[key].lng, satellites[key].lat]
-        },
-        properties: {
-          id: key,
-          name: key.trim(),
-          title: key.trim(),
-          icon: 'rocket-15',
-        }
+      Object.keys(satellites).forEach(key => {
+        markers.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [satellites[key].lng, satellites[key].lat]
+          },
+          properties: {
+            id: key,
+            name: key.trim(),
+            title: key.trim(),
+            icon: 'rocket-15',
+          }
+        });
       });
-    });
     } catch (e) {
       console.error(e);
     }
@@ -77,13 +78,20 @@ class App extends Component {
       container: this.mapRef.current,
       style: 'mapbox://styles/ashekur/ckcilirq435u31il5sqube24d',
       center: [this.state.lng, this.state.lat],
-      zoom: this.state.zoom
+      zoom: this.state.zoom,
+      maxBounds: [ [-180, -85], [180, 85] ],
     });
+    this.map.addControl(
+      new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl
+      })
+    );
     // Add zoom and rotation controls to the map.
-    this.map.addControl(new mapboxgl.NavigationControl());
+    this.map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
     this.map.on('load', async () => {
       window.setInterval(async () => {
-        const features = await this.fetchPoints(); 
+        const features = await this.fetchPoints();
         this.map.getSource('point').setData({
           type: 'FeatureCollection',
           features: features,
