@@ -32,7 +32,10 @@ class App extends Component {
   }
 
   async fetchPoints() {
-    const response = await fetch('http://www.celestrak.com/NORAD/elements/stations.txt');
+    const markers = [];
+    // http://www.celestrak.com/NORAD/elements/stations.txt');
+    try {
+      const response = await fetch('/satellites');
     const data = await response.text();
     const lines = data.split('\n');
     const satellites = {};
@@ -46,7 +49,6 @@ class App extends Component {
         }
       }
     }
-    const markers = [];
 
     Object.keys(satellites).forEach(key => {
       markers.push({
@@ -63,6 +65,9 @@ class App extends Component {
         }
       });
     });
+    } catch (e) {
+      console.error(e);
+    }
     return markers;
   }
 
@@ -70,10 +75,12 @@ class App extends Component {
     this.getCurrentLocation();
     this.map = new mapboxgl.Map({
       container: this.mapRef.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
+      style: 'mapbox://styles/ashekur/ckcilirq435u31il5sqube24d',
       center: [this.state.lng, this.state.lat],
       zoom: this.state.zoom
     });
+    // Add zoom and rotation controls to the map.
+    this.map.addControl(new mapboxgl.NavigationControl());
     this.map.on('load', async () => {
       window.setInterval(async () => {
         const features = await this.fetchPoints(); 
@@ -99,13 +106,17 @@ class App extends Component {
           'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
           'text-radial-offset': 0.5,
           'text-justify': 'auto',
+          'text-padding': 5,
+          'text-size': 12,
           // full list of icons here: https://labs.mapbox.com/maki-icons
           'icon-image': 'rocket-15', // this will put little croissants on our map
           'icon-padding': 0,
           'icon-allow-overlap': true,
         },
         paint: {
-          "text-color": "#FF0000"
+          "text-color": "#FFFFFF",
+          'text-halo-color': '#008000',
+          'text-halo-width': 1,
         }
       });
     });
@@ -117,10 +128,6 @@ class App extends Component {
         zoom: this.map.getZoom().toFixed(5)
       });
     });
-  }
-
-  componentWillUnmount() {
-
   }
 
   render() {
