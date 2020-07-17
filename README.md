@@ -2,9 +2,9 @@
 
 ### `npm install`
 
-### `npm run build`
-
 ## Run
+
+### `npm run build`
 
 ### `node server.js`
 
