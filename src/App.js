@@ -1,10 +1,7 @@
 import React, { Component } from 'react';
-import { getLatLngObj } from "tle.js";
+import { getLatLngObj, getGroundTracks  } from "tle.js";
 import ReactMapGL, { Source, Layer } from 'react-map-gl';
 import './App.css';
-
-// mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
-
 class App extends Component {
   mapRef = React.createRef();
   map;
@@ -16,8 +13,9 @@ class App extends Component {
         height: '100vh',
         latitude: 23.774647899999998,
         longitude: 90.4031033,
-        zoom: 1,
+        zoom: 3,
       },
+      iss: {},
       geojson: null,
       features: [],
       sattelites: [],
@@ -40,11 +38,105 @@ class App extends Component {
     }
   }
 
+  setIssGeoJson() {
+    const { iss, viewport } = this.state;
+    const { tleArr } = iss;
+    const name = tleArr[0].trim();
+    const latLonObj = getLatLngObj([tleArr[1], tleArr[2]]);
+    const { lng, lat } = latLonObj;
+    this.setState({
+      viewport: {
+        ...viewport,
+        latitude: lat,
+        longitude: lng,
+      },
+    });
+    const geojson = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [lng, lat]
+        },
+        properties: {
+          id: name,
+          name: name,
+          title: name,
+          icon: 'rocket-15',
+        }
+      }],
+    }
+    this.setState({
+      iss: {
+        ...iss,
+        geojson,
+      }
+    });
+  }
+
+  async setIssPath() {
+    const { iss } = this.state;
+    const { tleArr } = iss;
+    const threeOrbitsArr = await getGroundTracks({
+      tle: tleArr.join('\n'),
+      // Relative time to draw orbits from.  This will be used as the "middle"/current orbit.
+      startTimeMS: Date.now(),
+      // Resolution of plotted points.  Defaults to 1000 (plotting a point once for every second).
+      stepMS: 60000,
+      // Returns points in [lng, lat] order when true, and [lng, lat] order when false.
+      isLngLatFormat: true
+    });
+    this.setState({
+      iss: {
+        ...iss,
+        path: {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {
+                "stroke": "#FFF",
+                "stroke-width": 15,
+                "stroke-opacity": 1,
+                "line-join": "round",
+                "line-cap": "round"
+              },
+              "geometry": {
+                "type": "LineString",
+                "coordinates": threeOrbitsArr[1],
+              }
+            }
+          ]
+        },
+      }
+    },() => {
+      console.log(this.state.iss);
+    });
+  }
+
+  async fetchISSPoints() {
+    try {
+      const response = await fetch('http://www.celestrak.com/NORAD/elements/stations.txt');
+      const data = await response.text();
+      const lines = data.split('\n');
+      this.setState({
+        iss: {
+          tleArr: [lines[0], lines[1], lines[2]],
+        }
+      },() => {
+        this.setIssGeoJson();
+      });
+     } catch (e) {
+
+     }
+  }
+
   async fetchPoints() {
     const markers = [];
     // http://www.celestrak.com/NORAD/elements/stations.txt');
     try {
-      const response = await fetch('/satellites');
+      const response = await fetch('http://www.celestrak.com/NORAD/elements/stations.txt');
       const data = await response.text();
       const lines = data.split('\n');
       const satellites = {};
@@ -82,25 +174,28 @@ class App extends Component {
 
   async componentDidMount() {
     this.getCurrentLocation();
-    this.setState({
-      geojson: {
-        type: 'FeatureCollection',
-        features: await this.fetchPoints(),
-      },
-    });
+    await this.fetchISSPoints();
+    await this.setIssPath();
+    // this.setState({
+    //   geojson: {
+    //     type: 'FeatureCollection',
+    //     features: await this.fetchPoints(),
+    //   },
+    // });
     window.setInterval(async () => {
-      const features = await this.fetchPoints();
-      this.setState({
-        geojson: {
-          type: 'FeatureCollection',
-          features: features,
-        },
-      });
+      await this.setIssGeoJson();
+      // const features = await this.fetchPoints();
+      // this.setState({
+      //   geojson: {
+      //     type: 'FeatureCollection',
+      //     features: features,
+      //   },
+      // });
     }, 5000);
   }
 
   render() {
-    const { viewport, geojson } = this.state;
+    const { viewport, iss: { geojson, path } } = this.state;
     return (
       <div className="App">
         <ReactMapGL
@@ -109,6 +204,26 @@ class App extends Component {
           mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
           onViewportChange={nextViewport => this.setState({ viewport: { ...nextViewport } })}
         >
+          {
+            path && (
+              <Source id="sat-path" type='geojson' data={path}>
+                <Layer
+                  beforeId="point"
+                  icon="marker-15"
+                  id="route"
+                  type="line"
+                  layout= {{
+                    "line-join": "round",
+                    "line-cap": "round"
+                  }}
+                  paint= {{
+                    "line-color": "#FFF",
+                    "line-width": 1
+                  }}
+                />
+              </Source>
+            )
+          }
           {
             geojson && (
               <Source id="sat" type='geojson' data={geojson}>
