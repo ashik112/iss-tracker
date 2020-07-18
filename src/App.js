@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { getLatLngObj, getGroundTracks, getSatelliteInfo } from "tle.js";
 import ReactMapGL, { Source, Layer } from 'react-map-gl';
-import { Container, Row, Col, Card, Table } from 'react-bootstrap';
+import { Container, Row, Col, Table } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 class App extends Component {
@@ -103,23 +103,63 @@ class App extends Component {
       iss: {
         ...iss,
         path: {
-          "type": "FeatureCollection",
-          "features": [
-            {
-              "type": "Feature",
-              "properties": {
-                "stroke": "#FFF",
-                "stroke-width": 15,
-                "stroke-opacity": 1,
-                "line-join": "round",
-                "line-cap": "round"
-              },
-              "geometry": {
-                "type": "LineString",
-                "coordinates": threeOrbitsArr[1],
+          prev: {
+            "type": "FeatureCollection",
+            "features": [
+              {
+                "type": "Feature",
+                "properties": {
+                  "stroke": "#FFF",
+                  "stroke-width": 15,
+                  "stroke-opacity": 1,
+                  "line-join": "round",
+                  "line-cap": "round"
+                },
+                "geometry": {
+                  "type": "LineString",
+                  "coordinates": threeOrbitsArr[0],
+                }
               }
-            }
-          ]
+            ]
+          },
+          current: {
+            "type": "FeatureCollection",
+            "features": [
+              {
+                "type": "Feature",
+                "properties": {
+                  "stroke": "#FFF",
+                  "stroke-width": 15,
+                  "stroke-opacity": 1,
+                  "line-join": "round",
+                  "line-cap": "round"
+                },
+                "geometry": {
+                  "type": "LineString",
+                  "coordinates": threeOrbitsArr[1],
+                }
+              }
+            ]
+          },
+          next: {
+            "type": "FeatureCollection",
+            "features": [
+              {
+                "type": "Feature",
+                "properties": {
+                  "stroke": "#FFF",
+                  "stroke-width": 15,
+                  "stroke-opacity": 1,
+                  "line-join": "round",
+                  "line-cap": "round"
+                },
+                "geometry": {
+                  "type": "LineString",
+                  "coordinates": threeOrbitsArr[2],
+                }
+              }
+            ]
+          },
         },
       }
     });
@@ -224,43 +264,57 @@ class App extends Component {
         <Container fluid className="m-0 p-0">
           <Row noGutters>
             <Col md={2} lg={2} className="info-container">
-              <Card body className="m-3"><h3 className="text-center">{name}</h3></Card>
+              <h3 className="text-center text-success m-5">{name}</h3>
               {
                 info && (
-                  <Card body className="m-3">
-                    <Table  striped bordered hover>
+                  <div className="m-3">
+                    <Table  striped hover>
                       <tbody>
                         <tr>
-                          <th>Time</th>
-                          <td>{new Date().toLocaleTimeString()}</td>
+                          <th className="text-success">Time</th>
+                          <td className="text-light">{new Date().toLocaleTimeString()}</td>
                         </tr>
                         <tr>
-                          <th>Latitude</th>
-                          <td>{info.lat.toFixed(2)}</td>
+                          <th className="text-success">Latitude</th>
+                          <td className="text-light">{info.lat.toFixed(2)} °</td>
                         </tr>
                         <tr>
-                          <th>Longitude</th>
-                          <td>{info.lng.toFixed(2)}</td>
+                          <th className="text-success">Longitude</th>
+                          <td className="text-light">{info.lng.toFixed(2)} °</td>
                         </tr>
                         <tr>
-                          <th>Altitude</th>
-                          <td>{info.height.toFixed(2)} km</td>
+                          <th className="text-success">Altitude</th>
+                          <td className="text-light">{info.height.toFixed(2)} km</td>
                         </tr>
                         <tr>
-                          <th>Azimuth</th>
-                          <td>{info.azimuth.toFixed(2)}</td>
+                          <th className="text-success">Azimuth</th>
+                          <td className="text-light">{info.azimuth.toFixed(2)} °</td>
                         </tr>
                         <tr>
-                          <th>Elevation</th>
-                          <td>{info.elevation.toFixed(2)}</td>
+                          <th className="text-success">Elevation</th>
+                          <td className="text-light">{info.elevation.toFixed(2)} °</td>
                         </tr>
                         <tr>
-                          <th>Velocity</th>
-                          <td>{info.velocity.toFixed(2)} km/s</td>
+                          <th className="text-success">Velocity</th>
+                          <td className="text-light">{info.velocity.toFixed(2)} km/s</td>
                         </tr>
                       </tbody>
+                      <tfoot>
+                        <tr className="b-0">
+                          <th className="text-danger">--------</th>
+                          <td className="text-light">- 90 minutes</td>
+                        </tr>
+                        <tr>
+                          <th className="text-warning">--------</th>
+                          <td className="text-light">+ 90 minutes</td>
+                        </tr>
+                        <tr>
+                          <th className="text-light">--------</th>
+                          <td className="text-light">Current Path</td>
+                        </tr>
+                      </tfoot>
                     </Table>
-                  </Card>
+                  </div>
                 )
               }
             </Col>
@@ -274,11 +328,51 @@ class App extends Component {
                 >
                   {
                     path && (
-                      <Source id="sat-path" type='geojson' data={path}>
+                      <Source id="sat-path-prev" type='geojson' data={path.prev}>
                         <Layer
                           beforeId="point"
                           icon="marker-15"
-                          id="route"
+                          id="route-prev"
+                          type="line"
+                          layout={{
+                            "line-join": "round",
+                            "line-cap": "round"
+                          }}
+                          paint={{
+                            "line-color": "#FF0000",
+                            "line-width": 0.2
+                          }}
+                        />
+                      </Source>
+                    )
+                  }
+                  {
+                    path && (
+                      <Source id="sat-path-next" type='geojson' data={path.next}>
+                        <Layer
+                          beforeId="point"
+                          icon="marker-15"
+                          id="route-next"
+                          type="line"
+                          layout={{
+                            "line-join": "round",
+                            "line-cap": "round"
+                          }}
+                          paint={{
+                            "line-color": "#FFFF00",
+                            "line-width": 0.2
+                          }}
+                        />
+                      </Source>
+                    )
+                  }
+                  {
+                    path && (
+                      <Source id="sat-path-current" type='geojson' data={path.current}>
+                        <Layer
+                          beforeId="point"
+                          icon="marker-15"
+                          id="route-current"
                           type="line"
                           layout={{
                             "line-join": "round",
@@ -286,7 +380,7 @@ class App extends Component {
                           }}
                           paint={{
                             "line-color": "#FFF",
-                            "line-width": 1
+                            "line-width": 0.5
                           }}
                         />
                       </Source>
