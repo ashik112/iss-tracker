@@ -236,11 +236,11 @@ class App extends Component {
                         </tr>
                         <tr>
                           <th>Latitude</th>
-                          <td>{info.lat.toFixed(2)} N</td>
+                          <td>{info.lat.toFixed(2)}</td>
                         </tr>
                         <tr>
                           <th>Longitude</th>
-                          <td>{info.lng.toFixed(2)} E</td>
+                          <td>{info.lng.toFixed(2)}</td>
                         </tr>
                         <tr>
                           <th>Altitude</th>
