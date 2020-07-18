@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { getLatLngObj, getGroundTracks  } from "tle.js";
+import { getLatLngObj, getGroundTracks, getSatelliteInfo } from "tle.js";
 import ReactMapGL, { Source, Layer } from 'react-map-gl';
+import { Container, Row, Col, Card, Table } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 class App extends Component {
   mapRef = React.createRef();
@@ -9,11 +11,11 @@ class App extends Component {
     super(props);
     this.state = {
       viewport: {
-        width: '100vw',
+        width: '100%',
         height: '100vh',
         latitude: 23.774647899999998,
         longitude: 90.4031033,
-        zoom: 3,
+        zoom: 2,
       },
       iss: {},
       geojson: null,
@@ -44,6 +46,14 @@ class App extends Component {
     const name = tleArr[0].trim();
     const latLonObj = getLatLngObj([tleArr[1], tleArr[2]]);
     const { lng, lat } = latLonObj;
+
+    const satInfo = getSatelliteInfo(
+      tleArr.join('\n'),         // Satellite TLE string or array.
+      Date.now(),  // Timestamp (ms)
+      lat,      // Observer latitude (degrees)
+      lng,    // Observer longitude (degrees)
+      0               // Observer elevation (km)
+    );
     this.setState({
       viewport: {
         ...viewport,
@@ -70,6 +80,7 @@ class App extends Component {
     this.setState({
       iss: {
         ...iss,
+        info: satInfo,
         geojson,
       }
     });
@@ -78,8 +89,9 @@ class App extends Component {
   async setIssPath() {
     const { iss } = this.state;
     const { tleArr } = iss;
+    const tleStr = tleArr && tleArr.join('\n');
     const threeOrbitsArr = await getGroundTracks({
-      tle: tleArr.join('\n'),
+      tle: tleStr,
       // Relative time to draw orbits from.  This will be used as the "middle"/current orbit.
       startTimeMS: Date.now(),
       // Resolution of plotted points.  Defaults to 1000 (plotting a point once for every second).
@@ -118,16 +130,29 @@ class App extends Component {
       const response = await fetch('http://www.celestrak.com/NORAD/elements/stations.txt');
       const data = await response.text();
       const lines = data.split('\n');
+      const tleArr = [lines[0], lines[1], lines[2]];
+      const tleStr = tleArr && tleArr.join('\n');
+      const { lng, lat } = this.state;
+
+      const satInfo = getSatelliteInfo(
+        tleStr,         // Satellite TLE string or array.
+        Date.now(),  // Timestamp (ms)
+        lat,      // Observer latitude (degrees)
+        lng,    // Observer longitude (degrees)
+        0               // Observer elevation (km)
+      );
       this.setState({
         iss: {
-          tleArr: [lines[0], lines[1], lines[2]],
+          name: lines[0].trim(),
+          tleArr: tleArr,
+          info: satInfo || null,
         }
-      },() => {
+      }, () => {
         this.setIssGeoJson();
       });
-     } catch (e) {
+    } catch (e) {
 
-     }
+    }
   }
 
   async fetchPoints() {
@@ -193,64 +218,113 @@ class App extends Component {
   }
 
   render() {
-    const { viewport, iss: { geojson, path } } = this.state;
+    const { viewport, iss: { geojson, path, info, name } } = this.state;
     return (
       <div className="App">
-        <ReactMapGL
-          {...viewport}
-          mapStyle="mapbox://styles/ashekur/ckcilirq435u31il5sqube24d"
-          mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
-          onViewportChange={nextViewport => this.setState({ viewport: { ...nextViewport } })}
-        >
-          {
-            path && (
-              <Source id="sat-path" type='geojson' data={path}>
-                <Layer
-                  beforeId="point"
-                  icon="marker-15"
-                  id="route"
-                  type="line"
-                  layout= {{
-                    "line-join": "round",
-                    "line-cap": "round"
-                  }}
-                  paint= {{
-                    "line-color": "#FFF",
-                    "line-width": 1
-                  }}
-                />
-              </Source>
-            )
-          }
-          {
-            geojson && (
-              <Source id="sat" type='geojson' data={geojson}>
-                <Layer
-                  icon="marker-15"
-                  id="point"
-                  type="symbol"
-                  layout= {{
-                    'text-field': ['get', 'title'],
-                    'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                    'text-radial-offset': 0.5,
-                    'text-justify': 'auto',
-                    'text-padding': 5,
-                    'text-size': 12,
-                    // full list of icons here: https://labs.mapbox.com/maki-icons
-                    'icon-image': 'rocket-15', // this will put little croissants on our map
-                    'icon-padding': 0,
-                    'icon-allow-overlap': true,
-                  }}
-                  paint= {{
-                    "text-color": "#FFFFFF",
-                    'text-halo-color': '#008000',
-                    'text-halo-width': 1,
-                  }}
-                />
-              </Source>
-            )
-          }
-        </ReactMapGL>
+        <Container fluid className="m-0 p-0">
+          <Row noGutters>
+            <Col md={2} lg={2} className="info-container">
+              <Card body className="m-3"><h3 className="text-center">{name}</h3></Card>
+              {
+                info && (
+                  <Card body className="m-3">
+                    <Table  striped bordered hover>
+                      <tbody>
+                        <tr>
+                          <th>Time</th>
+                          <td>{new Date().toLocaleTimeString()}</td>
+                        </tr>
+                        <tr>
+                          <th>Latitude</th>
+                          <td>{info.lat.toFixed(2)} N</td>
+                        </tr>
+                        <tr>
+                          <th>Longitude</th>
+                          <td>{info.lng.toFixed(2)} E</td>
+                        </tr>
+                        <tr>
+                          <th>Altitude</th>
+                          <td>{info.height.toFixed(2)} km</td>
+                        </tr>
+                        <tr>
+                          <th>Azimuth</th>
+                          <td>{info.azimuth.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                          <th>Elevation</th>
+                          <td>{info.elevation.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                          <th>Velocity</th>
+                          <td>{info.velocity.toFixed(2)} km/s</td>
+                        </tr>
+                      </tbody>
+                    </Table>
+                  </Card>
+                )
+              }
+            </Col>
+            <Col md={10} lg={10} className="m-0 p-0">
+              <div className="map-container">
+                <ReactMapGL
+                  {...viewport}
+                  mapStyle="mapbox://styles/ashekur/ckcilirq435u31il5sqube24d"
+                  mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
+                  onViewportChange={nextViewport => this.setState({ viewport: { ...nextViewport } })}
+                >
+                  {
+                    path && (
+                      <Source id="sat-path" type='geojson' data={path}>
+                        <Layer
+                          beforeId="point"
+                          icon="marker-15"
+                          id="route"
+                          type="line"
+                          layout={{
+                            "line-join": "round",
+                            "line-cap": "round"
+                          }}
+                          paint={{
+                            "line-color": "#FFF",
+                            "line-width": 1
+                          }}
+                        />
+                      </Source>
+                    )
+                  }
+                  {
+                    geojson && (
+                      <Source id="sat" type='geojson' data={geojson}>
+                        <Layer
+                          icon="marker-15"
+                          id="point"
+                          type="symbol"
+                          layout={{
+                            'text-field': ['get', 'title'],
+                            'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                            'text-radial-offset': 0.5,
+                            'text-justify': 'auto',
+                            'text-padding': 5,
+                            'text-size': 12,
+                            // full list of icons here: https://labs.mapbox.com/maki-icons
+                            'icon-image': 'rocket-15', // this will put little croissants on our map
+                            'icon-padding': 0,
+                            'icon-allow-overlap': true,
+                          }}
+                          paint={{
+                            "text-color": "#FFFFFF",
+                            'text-halo-color': '#008000',
+                            'text-halo-width': 1,
+                          }}
+                        />
+                      </Source>
+                    )
+                  }
+                </ReactMapGL>
+              </div>
+            </Col>
+          </Row>
+        </Container>
       </div>
     );
   }
