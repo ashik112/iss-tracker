@@ -322,7 +322,7 @@ class App extends Component {
               <div className="map-container">
                 <ReactMapGL
                   {...viewport}
-                  mapStyle="mapbox://styles/ashekur/ckcilirq435u31il5sqube24d"
+                  mapStyle="mapbox://styles/mapbox/satellite-v9"
                   mapboxApiAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
                   onViewportChange={nextViewport => this.setState({ viewport: { ...nextViewport } })}
                 >
