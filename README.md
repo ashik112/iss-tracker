@@ -1,13 +1,13 @@
 
 # ISS TRACKER
 
-You will need a mapbox token which you can get from mapbox.
+You will need a mapbox public token which you can get from mapbox.
 
 Set the token on .env/.env.local in REACT_APP_MAPBOX_ACCESS_TOKEN
 
 Data is fetched from http://www.celestrak.com/NORAD/elements/stations.txt
 
-There's an issue with CORS. You need to enable CORS on browser to be able to fetch data on `Development` mode (`npm start`).
+There's an issue with CORS. You need to enable CORS on browser to be able to fetch data from celestrak on `Development` mode (`npm start`).
 
 It works properly in `Production` but you have to change the api url to `/satellites` in App.js
 
