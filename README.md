@@ -1,6 +1,8 @@
 
 # ISS TRACKER
 
+![alt text](https://raw.githubusercontent.com/ashik112/iss-tracker/master/screenshots/iss-tracker.png)
+
 You will need a mapbox public token which you can get from mapbox.
 
 Set the token on .env/.env.local in REACT_APP_MAPBOX_ACCESS_TOKEN
