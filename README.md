@@ -4,6 +4,8 @@
 This was a passion project for me. Space fascinates me and I have always wanted to create something related to that. 
 So oneday, came up with the idea to make a website to see the current position of the International Space Station for myself.
 
+The project can be changed to display all the space stations' positions available from celestrak.
+
 ![alt text](https://raw.githubusercontent.com/ashik112/iss-tracker/master/screenshots/iss-tracker.png)
 
 You will need a mapbox public token which you can get from [mapbox](https://www.mapbox.com/).
