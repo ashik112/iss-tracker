@@ -1,9 +1,12 @@
 
 # ISS TRACKER
 
+This was a passion project for me. Space fascinates me and I have always wanted to create something related to that. 
+So oneday, came up with the idea to make a website to see the current position of the International Space Station for myself.
+
 ![alt text](https://raw.githubusercontent.com/ashik112/iss-tracker/master/screenshots/iss-tracker.png)
 
-You will need a mapbox public token which you can get from mapbox.
+You will need a mapbox public token which you can get from [mapbox](https://www.mapbox.com/).
 
 Set the token on .env/.env.local in REACT_APP_MAPBOX_ACCESS_TOKEN
 
