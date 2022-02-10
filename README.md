@@ -18,6 +18,8 @@ There's an issue with CORS. You need to enable CORS on browser to be able to fet
 
 It works properly in `Production` but you have to change the api url to `/satellites` in App.js
 
+I use [this](https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf?hl=en)  plugin in chrome to get around the CORS issue.
+
 ## Installation
 
 ### `npm install`
